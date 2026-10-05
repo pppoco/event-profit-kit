@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f7f3ec">
+<title>この出店、いくら儲かった？</title>
+<style>
+:root{--bg:#f7f3ec;--card:#fff;--ink:#28241f;--muted:#766f66;--line:#ded7cc;--green:#2f6f58;--green2:#e7f0eb;--yellow:#fff7c7;--red:#9b4b35}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;padding-bottom:84px}
+.app{max-width:620px;margin:auto}header{position:sticky;top:0;background:#f7f3eced;backdrop-filter:blur(8px);z-index:5;border-bottom:1px solid var(--line);padding:13px 15px}.brand{font-size:18px;font-weight:900}.sub{font-size:11px;color:var(--muted);margin-top:2px}
+main{padding:13px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:11px;box-shadow:0 5px 18px #3b332914}
+h2{font-size:16px;margin:0 0 11px}.small{font-size:12px;color:var(--muted);line-height:1.5}.row{display:flex;align-items:center;gap:8px}.between{justify-content:space-between}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:9px}.metric{border:1px solid var(--line);border-radius:14px;padding:11px;background:#faf8f3}.metric b{display:block;font-size:21px;margin-top:3px}.metric.profit{background:var(--green2)}.metric.profit b{color:var(--green)}
+label{display:block;font-size:12px;font-weight:800;margin-bottom:4px}.field{margin-bottom:9px}input,select,textarea{width:100%;padding:11px;border:1px solid #cec6b9;border-radius:12px;background:var(--yellow);font:inherit;color:var(--ink)}textarea{min-height:70px}
+button{font:inherit}.btn{border:0;border-radius:12px;background:var(--green);color:#fff;font-weight:850;padding:11px 13px}.btn.full{width:100%}.btn.secondary{background:#ece7df;color:var(--ink)}.btn.ghost{background:#fff;border:1px solid var(--line);color:var(--ink)}.btn.danger{background:#f4e4de;color:var(--red)}.btn.sm{padding:7px 9px;font-size:12px}
+.product,.line{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:10px 0;border-bottom:1px solid #eee8df}.product:last-child,.line:last-child{border-bottom:0}.name{font-weight:850}.plus{width:49px;height:42px;border:0;border-radius:12px;background:var(--green);color:white;font-size:20px;font-weight:900}.empty{text-align:center;color:var(--muted);padding:18px 6px;font-size:12px}.note{background:#f4f1eb;border-radius:10px;padding:9px;font-size:11px;color:var(--muted);line-height:1.5}.summary{display:flex;justify-content:space-between;padding:7px 0}.summary.total{font-size:17px;font-weight:900;border-top:2px solid var(--ink);margin-top:4px;padding-top:10px}.neg{color:var(--red)}.pos{color:var(--green)}
+.screen{display:none}.screen.active{display:block}.tabs{position:fixed;bottom:0;left:0;right:0;background:#fffffff5;border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom));z-index:10}.tabsin{max-width:620px;margin:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:5px}.tab{border:0;background:transparent;border-radius:10px;padding:9px 2px;font-size:11px;font-weight:800;color:var(--muted)}.tab.active{background:var(--green2);color:var(--green)}
+.overlay{position:fixed;inset:0;background:#201c186b;z-index:30;display:flex;align-items:flex-end;justify-content:center;padding:10px}.overlay.hidden{display:none}.sheet{width:min(620px,100%);background:#fff;border-radius:21px;padding:16px;max-height:88vh;overflow:auto}.welcome{align-items:center}.welcome .sheet{max-width:480px}.big{font-size:27px;font-weight:950;line-height:1.25;margin:2px 0 10px}.stack{display:grid;gap:9px}.hidden{display:none!important}
+@media(max-width:370px){.grid2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div class="brand">この出店、いくら儲かった？</div><div class="sub">マルシェの採算だけ、スマホでかんたんに。</div></header>
+<main>
+<section id="s-sales" class="screen active">
+<div class="card">
+<div class="row between"><div><div class="small">いま記録している出店</div><h2 id="activeName" style="margin:3px 0">出店を登録してください</h2><div id="activeDate" class="small"></div></div><button class="btn ghost sm" onclick="go('events')">変更</button></div>
+<div class="grid2" style="margin-top:11px"><div class="metric"><span class="small">売上</span><b id="liveRev">¥0</b></div><div class="metric profit"><span class="small">いまの利益</span><b id="liveProfit">¥0</b></div></div>
+</div>
+<div class="card"><h2>売れた商品をタップ</h2><div class="small" style="margin-bottom:8px">通常価格・現金・1個なら「＋1」だけ。</div><div id="quick"></div><button class="btn secondary full" onclick="openSale()">数量・値引き・決済方法を指定</button></div>
+<div class="card"><div class="row between"><h2>今日の販売履歴</h2><span id="saleCount" class="small"></span></div><div id="salesList"></div></div>
+</section>
+
+<section id="s-products" class="screen">
+<div class="card"><h2>商品を登録</h2>
+<div class="field"><label>商品名</label><input id="pName" placeholder="例：星ピアス"></div>
+<div class="grid2"><div class="field"><label>販売価格</label><input id="pPrice" type="number" inputmode="numeric" min="0" placeholder="800"></div><div class="field"><label>材料費／1個</label><input id="pMat" type="number" inputmode="numeric" min="0" placeholder="120"></div></div>
+<div class="field"><label>包装費／1個</label><input id="pPack" type="number" inputmode="numeric" min="0" placeholder="30"></div>
+<div class="note">原価は「売れた個数 ×（材料費＋包装費）」で計算します。材料をまとめ買いした総額は入れません。</div>
+<button class="btn full" style="margin-top:9px" onclick="addProduct()">商品を追加</button></div>
+<div class="card"><h2>登録済み商品</h2><div id="productList"></div></div>
+</section>
+
+<section id="s-events" class="screen">
+<div class="card"><h2>出店を登録</h2>
+<div class="field"><label>イベント名</label><input id="eName" placeholder="例：青空マルシェ"></div>
+<div class="field"><label>日付</label><input id="eDate" type="date"></div>
+<div class="grid2"><div class="field"><label>出店料</label><input id="eBooth" type="number" inputmode="numeric" value="0"></div><div class="field"><label>交通費</label><input id="eTransport" type="number" inputmode="numeric" value="0"></div></div>
+<div class="field"><label>その他の経費</label><input id="eOther" type="number" inputmode="numeric" value="0"></div>
+<div class="grid2"><div class="field"><label>決済手数料率（%）</label><input id="eRate" type="number" inputmode="decimal" step="0.01" value="0"></div><div class="field"><label>1決済の固定額</label><input id="eFixed" type="number" inputmode="numeric" value="0"></div></div>
+<div class="field"><label>キャッシュレス決済件数</label><input id="eCount" type="number" inputmode="numeric" value="0"></div>
+<div class="field"><label>手数料の実額（分かる時だけ）</label><input id="eOverride" type="number" inputmode="numeric" placeholder="空欄なら自動計算"></div>
+<button class="btn full" onclick="addEvent()">出店を追加して使う</button></div>
+<div class="card"><h2>登録済み出店</h2><div id="eventList"></div></div>
+</section>
+
+<section id="s-results" class="screen">
+<div class="card"><div class="field"><label>結果を見る出店</label><select id="resultSelect" onchange="render()"></select></div>
+<div class="grid2"><div class="metric"><span class="small">売上</span><b id="rRev">¥0</b></div><div class="metric profit"><span class="small">差引利益</span><b id="rProfit">¥0</b></div></div>
+<div style="height:10px"></div><div class="summary"><span>売れた分の原価</span><b id="rCost">¥0</b></div><div class="summary"><span>決済手数料</span><b id="rFee">¥0</b></div><div class="summary"><span>出店経費</span><b id="rExp">¥0</b></div><div class="summary total"><span>利益</span><b id="rProfit2">¥0</b></div><div id="rMargin" class="small"></div></div>
+<div class="card"><h2>商品別</h2><div id="breakdown"></div></div>
+<div class="card"><h2>次回メモ</h2>
+<div class="field"><label>次も出たい？</label><select id="decision" onchange="saveMemo()"><option value="">未選択</option><option>出たい</option><option>微妙</option><option>出ない</option></select></div>
+<div class="field"><label>良かったこと</label><textarea id="good" oninput="saveMemo()"></textarea></div><div class="field"><label>次回変えること</label><textarea id="next" oninput="saveMemo()"></textarea></div></div>
+<div class="card"><h2>データ管理</h2><div class="stack"><button class="btn secondary full" onclick="backup()">バックアップを保存</button><label class="btn ghost full" style="text-align:center">バックアップから復元<input id="restoreFile" type="file" accept=".json,application/json" class="hidden" onchange="restore(event)"></label><button class="btn ghost full" onclick="sample(true)">サンプルデータに戻す</button><button class="btn danger full" onclick="empty(true)">全部消して空ではじめる</button></div><div class="small" style="margin-top:9px">データはこのブラウザ内に保存されます。端末変更やブラウザデータ削除に備えて、必要ならバックアップしてください。</div></div>
+</section>
+</main></div>
+
+<nav class="tabs"><div class="tabsin"><button class="tab active" data-n="sales" onclick="go('sales')">売れた</button><button class="tab" data-n="products" onclick="go('products')">商品</button><button class="tab" data-n="events" onclick="go('events')">出店</button><button class="tab" data-n="results" onclick="go('results')">結果</button></div></nav>
+
+<div id="saleModal" class="overlay hidden"><div class="sheet"><div class="row between"><h2>販売を記録</h2><button class="btn ghost sm" onclick="saleModal.classList.add('hidden')">閉じる</button></div><div class="field"><label>商品</label><select id="sProduct"></select></div><div class="grid2"><div class="field"><label>数量</label><input id="sQty" type="number" inputmode="numeric" min="1" value="1"></div><div class="field"><label>決済方法</label><select id="sPay"><option value="cash">現金</option><option value="cashless">キャッシュレス</option></select></div></div><div class="field"><label>実際の売上（値引き時だけ）</label><input id="sOverride" type="number" inputmode="numeric" min="0" placeholder="空欄なら通常価格×数量"></div><button class="btn full" onclick="addSale()">登録する</button></div></div>
+
+<div id="welcome" class="overlay welcome hidden"><div class="sheet"><div class="small" style="font-weight:850;color:var(--green)">スマホ試作</div><div class="big">この出店、<br>いくら儲かった？</div><p class="small">出店中は売れた商品をタップ。終わったら、売上から原価・手数料・出店経費を引いた利益を確認します。</p><div class="stack"><button class="btn full" onclick="sample(false)">サンプルで触ってみる</button><button class="btn secondary full" onclick="empty(false)">空ではじめる</button></div><div class="note" style="margin-top:10px">ログイン不要。入力内容はこのスマホのブラウザに保存します。</div></div></div>
+
+<script>
+var KEY="eventProfitKit_v02";
+var state={products:[],events:[],sales:[],memos:{},active:null,welcome:false};
+function el(x){return document.getElementById(x)}
+function n(x){return Number(x||0)}
+function y(x){return "¥"+Math.round(n(x)).toLocaleString("ja-JP")}
+function uid(p){return p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function esc(x){return String(x==null?"":x).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]})}
+function save(){localStorage.setItem(KEY,JSON.stringify(state))}
+function load(){try{var x=JSON.parse(localStorage.getItem(KEY));if(x)state=Object.assign(state,x)}catch(e){}if(!state.welcome)el("welcome").classList.remove("hidden");render()}
+function product(id){return state.products.find(function(x){return x.id===id})}
+function eventOf(id){return state.events.find(function(x){return x.id===id})}
+function revenue(s){var p=product(s.productId);return s.override===""?n(p&&p.price)*n(s.qty):n(s.override)}
+function cost(s){var p=product(s.productId);return (n(p&&p.mat)+n(p&&p.pack))*n(s.qty)}
+function stats(eid){var e=eventOf(eid);if(!e)return{rev:0,cost:0,fee:0,exp:0,profit:0,margin:0};var ss=state.sales.filter(function(s){return s.eventId===eid});var rev=ss.reduce(function(a,s){return a+revenue(s)},0);var c=ss.reduce(function(a,s){return a+cost(s)},0);var cash=ss.filter(function(s){return s.pay==="cashless"}).reduce(function(a,s){return a+revenue(s)},0);var fee=e.override===""?cash*n(e.rate)/100+n(e.fixed)*n(e.count):n(e.override);var exp=n(e.booth)+n(e.transport)+n(e.other);var p=rev-c-fee-exp;return{rev:rev,cost:c,fee:fee,exp:exp,profit:p,margin:rev?p/rev*100:0}}
+function go(name){document.querySelectorAll(".screen").forEach(function(x){x.classList.remove("active")});el("s-"+name).classList.add("active");document.querySelectorAll(".tab").forEach(function(x){x.classList.toggle("active",x.dataset.n===name)});window.scrollTo(0,0);render()}
+function sample(ask){if(ask&&!confirm("現在のデータをサンプルに置き換えますか？"))return;state={products:[{id:"p1",name:"星ピアス",price:800,mat:120,pack:30},{id:"p2",name:"花柄ポーチ",price:1800,mat:520,pack:80},{id:"p3",name:"刺繍ブローチ",price:1200,mat:300,pack:50}],events:[{id:"e1",name:"青空マルシェ",date:"2026-10-05",booth:3000,transport:1200,other:500,rate:3,fixed:0,count:4,override:""}],sales:[{id:"s1",eventId:"e1",productId:"p1",qty:5,override:"",pay:"cash"},{id:"s2",eventId:"e1",productId:"p2",qty:3,override:"",pay:"cashless"},{id:"s3",eventId:"e1",productId:"p3",qty:3,override:3200,pay:"cashless"}],memos:{e1:{decision:"出たい",good:"ピアスが一番動いた。",next:"500〜1000円台の商品を増やす。"}},active:"e1",welcome:true};save();el("welcome").classList.add("hidden");go("sales")}
+function empty(ask){if(ask&&!confirm("すべて消しますか？"))return;state={products:[],events:[],sales:[],memos:{},active:null,welcome:true};save();el("welcome").classList.add("hidden");render();go("products")}
+function addProduct(){var name=el("pName").value.trim();if(!name){alert("商品名を入れてください");return}state.products.push({id:uid("p"),name:name,price:n(el("pPrice").value),mat:n(el("pMat").value),pack:n(el("pPack").value)});el("pName").value="";el("pPrice").value="";el("pMat").value="";el("pPack").value="";save();render()}
+function addEvent(){var name=el("eName").value.trim();if(!name){alert("イベント名を入れてください");return}var e={id:uid("e"),name:name,date:el("eDate").value,booth:n(el("eBooth").value),transport:n(el("eTransport").value),other:n(el("eOther").value),rate:n(el("eRate").value),fixed:n(el("eFixed").value),count:n(el("eCount").value),override:el("eOverride").value===""?"":n(el("eOverride").value)};state.events.push(e);state.active=e.id;save();render();go("sales")}
+function quick(pid){if(!state.active){alert("先に出店を登録してください");go("events");return}state.sales.push({id:uid("s"),eventId:state.active,productId:pid,qty:1,override:"",pay:"cash"});save();render()}
+function openSale(){if(!state.active){alert("先に出店を登録してください");go("events");return}if(!state.products.length){alert("先に商品を登録してください");go("products");return}el("sProduct").innerHTML=state.products.map(function(p){return '<option value="'+p.id+'">'+esc(p.name)+'（'+y(p.price)+'）</option>'}).join("");el("sQty").value=1;el("sPay").value="cash";el("sOverride").value="";el("saleModal").classList.remove("hidden")}
+function addSale(){state.sales.push({id:uid("s"),eventId:state.active,productId:el("sProduct").value,qty:Math.max(1,Math.floor(n(el("sQty").value))),override:el("sOverride").value===""?"":n(el("sOverride").value),pay:el("sPay").value});save();el("saleModal").classList.add("hidden");render()}
+function delSale(id){if(confirm("この販売記録を削除しますか？")){state.sales=state.sales.filter(function(x){return x.id!==id});save();render()}}
+function setActive(id){state.active=id;save();go("sales")}
+function resultId(){return el("resultSelect").value||state.active||(state.events[0]&&state.events[0].id)}
+function saveMemo(){var id=resultId();if(!id)return;state.memos[id]={decision:el("decision").value,good:el("good").value,next:el("next").value};save()}
+function backup(){var b=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download="この出店いくら儲かった_バックアップデータ.json";a.click();URL.revokeObjectURL(a.href)}
+function restore(ev){var f=ev.target.files&&ev.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){try{var x=JSON.parse(r.result);if(!x.products||!x.events||!x.sales)throw 0;state=Object.assign(state,x,{welcome:true});save();render();alert("バックアップから復元しました")}catch(e){alert("このバックアップは復元できませんでした")}ev.target.value=""};r.readAsText(f)}
+function render(){var a=eventOf(state.active);el("activeName").textContent=a?a.name:"出店を登録してください";el("activeDate").textContent=a&&a.date?a.date:"";var st=stats(state.active);el("liveRev").textContent=y(st.rev);el("liveProfit").textContent=y(st.profit);el("liveProfit").className=st.profit<0?"neg":"pos";
+el("quick").innerHTML=state.products.length?state.products.map(function(p){return '<div class="product"><div><div class="name">'+esc(p.name)+'</div><div class="small">'+y(p.price)+' ／ 原価 '+y(n(p.mat)+n(p.pack))+'</div></div><button class="plus" onclick="quick(\''+p.id+'\')">＋1</button></div>'}).join(""):'<div class="empty">まだ商品がありません。</div>';
+var ss=state.sales.filter(function(s){return s.eventId===state.active}).slice().reverse();el("saleCount").textContent=ss.length+"件";el("salesList").innerHTML=ss.length?ss.map(function(s){var p=product(s.productId);return '<div class="line"><div><b>'+esc(p?p.name:"商品")+'</b><div class="small">'+s.qty+'個 ／ '+(s.pay==="cashless"?"キャッシュレス":"現金")+'</div></div><div style="text-align:right"><b>'+y(revenue(s))+'</b><br><button class="btn danger sm" onclick="delSale(\''+s.id+'\')">削除</button></div></div>'}).join(""):'<div class="empty">まだ販売記録がありません。</div>';
+el("productList").innerHTML=state.products.length?state.products.map(function(p){return '<div class="line"><div><b>'+esc(p.name)+'</b><div class="small">'+y(p.price)+' ／ 原価 '+y(n(p.mat)+n(p.pack))+'</div></div></div>'}).join(""):'<div class="empty">まだ商品がありません。</div>';
+el("eventList").innerHTML=state.events.length?state.events.map(function(e){return '<div class="line"><div><b>'+esc(e.name)+'</b><div class="small">'+esc(e.date||"日付未設定")+' ／ 出店経費 '+y(n(e.booth)+n(e.transport)+n(e.other))+'</div></div><button class="btn secondary sm" onclick="setActive(\''+e.id+'\')">'+(e.id===state.active?"使用中":"使う")+'</button></div>'}).join(""):'<div class="empty">まだ出店がありません。</div>';
+var prev=el("resultSelect").value;el("resultSelect").innerHTML=state.events.map(function(e){return '<option value="'+e.id+'">'+esc(e.name)+(e.date?" "+e.date:"")+'</option>'}).join("");if(state.events.some(function(e){return e.id===prev}))el("resultSelect").value=prev;else if(state.active)el("resultSelect").value=state.active;
+var rid=resultId(),rs=stats(rid);el("rRev").textContent=y(rs.rev);el("rProfit").textContent=y(rs.profit);el("rCost").textContent=y(rs.cost);el("rFee").textContent=y(rs.fee);el("rExp").textContent=y(rs.exp);el("rProfit2").textContent=y(rs.profit);el("rMargin").textContent=rs.rev?"利益率 "+rs.margin.toFixed(1)+"%":"売上0円のため利益率は表示しません。";
+var agg={};state.sales.filter(function(s){return s.eventId===rid}).forEach(function(s){var p=product(s.productId);if(!p)return;if(!agg[p.id])agg[p.id]={name:p.name,qty:0,rev:0};agg[p.id].qty+=n(s.qty);agg[p.id].rev+=revenue(s)});var vals=Object.keys(agg).map(function(k){return agg[k]}).sort(function(a,b){return b.qty-a.qty});el("breakdown").innerHTML=vals.length?vals.map(function(x){return '<div class="line"><div><b>'+esc(x.name)+'</b><div class="small">'+x.qty+'個</div></div><b>'+y(x.rev)+'</b></div>'}).join(""):'<div class="empty">販売データがありません。</div>';
+var m=state.memos[rid]||{decision:"",good:"",next:""};if(document.activeElement!==el("decision"))el("decision").value=m.decision||"";if(document.activeElement!==el("good"))el("good").value=m.good||"";if(document.activeElement!==el("next"))el("next").value=m.next||""}
+load();
+</script>
+</body>
+</html>
